@@ -15,16 +15,11 @@ A Chrome extension that automatically tracks your GitHub pull requests and revie
 
 1. **Download or clone this repository**
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:jerrodmathis/live-pull-requests.git
    cd github-pr-tracker
    ```
 
-2. **Add icons** (required)
-   - Create or download 16x16, 48x48, and 128x128 pixel PNG icons
-   - Place them in the `icons/` directory as `icon16.png`, `icon48.png`, and `icon128.png`
-   - See `icons/README.md` for more details
-
-3. **Load extension in Chrome**
+2. **Load extension in Chrome**
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode" in the top right
    - Click "Load unpacked" and select this directory
@@ -53,15 +48,12 @@ A Chrome extension that automatically tracks your GitHub pull requests and revie
 ## File Structure
 
 ```
-├── manifest.json       # Extension manifest
-├── background.js       # Background service worker
+├── manifest.json      # Extension manifest
+├── background.js      # Background service worker
 ├── popup.html         # Extension popup interface
 ├── popup.css          # Popup styling
 ├── popup.js           # Popup functionality
-├── icons/             # Extension icons directory
-│   ├── icon16.png     # 16x16 icon
-│   ├── icon48.png     # 48x48 icon
-│   └── icon128.png    # 128x128 icon
+├── icon.png           # Extension icon
 └── README.md          # This file
 ```
 
@@ -92,7 +84,3 @@ To modify the extension:
 - Verify your GitHub token is still valid
 - Check if the repositories exist and you have access
 - Try manual update to see any error messages
-
-**Icons not displaying?**
-- Make sure PNG files exist in the `icons/` directory
-- Ensure files are named correctly: `icon16.png`, `icon48.png`, `icon128.png` 
