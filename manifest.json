@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Pull Request Tracker",
+  "version": "1.0.0",
+  "description": "Track and bookmark your GitHub pull requests and review requests",
+  "permissions": [
+    "bookmarks",
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://api.github.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Live Pull Requests",
+    "default_icon": "icon.png"
+  }
+} 

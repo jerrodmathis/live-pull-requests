@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub PR Tracker</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GitHub PR Tracker</h1>
+        </header>
+        
+        <div class="section">
+            <h2>GitHub Token</h2>
+            <div class="input-group">
+                <input type="password" id="githubToken" placeholder="Enter GitHub personal access token">
+                <button id="testToken">Test</button>
+            </div>
+            <div class="status" id="tokenStatus"></div>
+            <div class="help">
+                <a href="https://github.com/settings/tokens" target="_blank">Create a token</a>
+                with 'repo' and 'read:user' scopes
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Repositories</h2>
+            <div class="input-group">
+                <input type="text" id="repoInput" placeholder="owner/repository">
+                <button id="addRepo">Add</button>
+            </div>
+            <div class="repo-list" id="repoList"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Actions</h2>
+            <button id="updateNow" class="primary">Update Now</button>
+            <div class="status" id="updateStatus"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Status</h2>
+            <div class="status-info">
+                <div>Last Update: <span id="lastUpdate">Never</span></div>
+                <div>Next Update: <span id="nextUpdate">15 minutes</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html> 
