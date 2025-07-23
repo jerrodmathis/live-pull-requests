@@ -1,5 +1,6 @@
 const GITHUB_API_BASE = 'https://api.github.com';
 const BOOKMARK_FOLDER_NAME = 'Pull Requests';
+const TAB_GROUP_NAME = 'Pull Requests';
 const UPDATE_INTERVAL = 15; // minutes
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -152,6 +153,7 @@ async function updatePullRequests() {
     }
     
     await updateBookmarks(allPullRequests);
+    await updateTabGroup(allPullRequests);
     
     await chrome.storage.sync.set({ lastUpdate: Date.now() });
     
@@ -159,6 +161,65 @@ async function updatePullRequests() {
     
   } catch (error) {
     console.error('Error updating pull requests:', error);
+  }
+}
+
+async function findTabGroupByName(title) {
+  const groups = await chrome.tabGroups.query({ title });
+  if (groups.length > 0) {
+    return groups[0];
+  }
+  return null;
+}
+
+async function updateTabGroup(pullRequests) {
+  const group = await findTabGroupByName(TAB_GROUP_NAME);
+  const tabsInGroup = group ? await chrome.tabs.query({ groupId: group.id }) : [];
+
+  const existingPRTabs = new Map();
+  tabsInGroup.forEach(tab => {
+    if (tab.url) {
+      existingPRTabs.set(tab.url, tab.id);
+    }
+  });
+
+  const currentPRs = new Map();
+  pullRequests.forEach(pr => {
+    currentPRs.set(pr.html_url, pr);
+  });
+
+  const tabsToRemove = [];
+  for (const [url, tabId] of existingPRTabs) {
+    if (!currentPRs.has(url)) {
+      tabsToRemove.push(tabId);
+    }
+  }
+  if (tabsToRemove.length > 0) {
+    await chrome.tabs.remove(tabsToRemove);
+  }
+
+  const urlsToCreate = [];
+  for (const [url, pr] of currentPRs) {
+    if (!existingPRTabs.has(url)) {
+      urlsToCreate.push(url);
+    }
+  }
+
+  if (urlsToCreate.length === 0) {
+    return;
+  }
+
+  const newTabs = await Promise.all(
+    urlsToCreate.map(url => chrome.tabs.create({ url, active: false }))
+  );
+
+  const newTabIds = newTabs.map(tab => tab.id);
+
+  if (group) {
+    await chrome.tabs.group({ groupId: group.id, tabIds: newTabIds });
+  } else {
+    const groupId = await chrome.tabs.group({ tabIds: newTabIds });
+    await chrome.tabGroups.update(groupId, { title: TAB_GROUP_NAME, collapsed: true });
   }
 }
 

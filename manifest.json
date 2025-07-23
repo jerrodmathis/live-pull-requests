@@ -6,7 +6,9 @@
   "permissions": [
     "bookmarks",
     "alarms",
-    "storage"
+    "storage",
+    "tabGroups",
+    "tabs"
   ],
   "host_permissions": [
     "https://api.github.com/*"
