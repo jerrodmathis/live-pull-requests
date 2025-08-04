@@ -173,16 +173,39 @@ async function updatePullRequests() {
   }
 }
 
-async function findTabGroupByName(title) {
-  const groups = await chrome.tabGroups.query({ title });
-  if (groups.length > 0) {
-    return groups[0];
+async function getStoredTabGroupId() {
+  const result = await chrome.storage.local.get(['tabGroupId']);
+  return result.tabGroupId;
+}
+
+async function storeTabGroupId(groupId) {
+  await chrome.storage.local.set({ tabGroupId: groupId });
+}
+
+async function clearStoredTabGroupId() {
+  await chrome.storage.local.remove(['tabGroupId']);
+}
+
+async function findOrCreateTabGroup() {
+  const storedGroupId = await getStoredTabGroupId();
+  
+  if (storedGroupId) {
+    try {
+      // Try to get the group by stored ID
+      const group = await chrome.tabGroups.get(storedGroupId);
+      return group;
+    } catch (error) {
+      // Group doesn't exist anymore, clear the stored ID
+      console.log('Stored tab group no longer exists, will create new one');
+      await clearStoredTabGroupId();
+    }
   }
+  
   return null;
 }
 
 async function updateTabGroup(pullRequests) {
-  let group = await findTabGroupByName(TAB_GROUP_NAME);
+  let group = await findOrCreateTabGroup();
   const tabsInGroup = group ? await chrome.tabs.query({ groupId: group.id }) : [];
 
   const existingPRTabs = new Map(
@@ -223,6 +246,9 @@ async function updateTabGroup(pullRequests) {
 
     const groupId = await chrome.tabs.group({ tabIds: [firstTab.id] });
     await chrome.tabGroups.update(groupId, { title: TAB_GROUP_NAME, collapsed: true });
+    
+    // Store the new group ID for future use
+    await storeTabGroupId(groupId);
 
     // Create the rest of the tabs and add them to the new group.
     if (remainingUrls.length > 0) {
