@@ -1,6 +1,5 @@
 const GITHUB_API_BASE = 'https://api.github.com';
 const BOOKMARK_FOLDER_NAME = 'Pull Requests';
-const TAB_GROUP_NAME = 'Pull Requests';
 const UPDATE_INTERVAL = 15; // minutes
 let isUpdating = false;
 
@@ -160,7 +159,6 @@ async function updatePullRequests() {
     }
     
     await updateBookmarks(allPullRequests);
-    await updateTabGroup(allPullRequests);
     
     await chrome.storage.sync.set({ lastUpdate: Date.now() });
     
@@ -173,95 +171,7 @@ async function updatePullRequests() {
   }
 }
 
-async function getStoredTabGroupId() {
-  const result = await chrome.storage.local.get(['tabGroupId']);
-  return result.tabGroupId;
-}
 
-async function storeTabGroupId(groupId) {
-  await chrome.storage.local.set({ tabGroupId: groupId });
-}
-
-async function clearStoredTabGroupId() {
-  await chrome.storage.local.remove(['tabGroupId']);
-}
-
-async function findOrCreateTabGroup() {
-  const storedGroupId = await getStoredTabGroupId();
-  
-  if (storedGroupId) {
-    try {
-      // Try to get the group by stored ID
-      const group = await chrome.tabGroups.get(storedGroupId);
-      return group;
-    } catch (error) {
-      // Group doesn't exist anymore, clear the stored ID
-      console.log('Stored tab group no longer exists, will create new one');
-      await clearStoredTabGroupId();
-    }
-  }
-  
-  return null;
-}
-
-async function updateTabGroup(pullRequests) {
-  let group = await findOrCreateTabGroup();
-  const tabsInGroup = group ? await chrome.tabs.query({ groupId: group.id }) : [];
-
-  const existingPRTabs = new Map(
-    tabsInGroup.map(tab => [tab.url, tab.id])
-  );
-
-  const currentPRUrls = new Set(pullRequests.map(pr => pr.html_url));
-
-  const tabsToRemove = tabsInGroup
-    .filter(tab => !currentPRUrls.has(tab.url))
-    .map(tab => tab.id);
-
-  if (tabsToRemove.length > 0) {
-    await chrome.tabs.remove(tabsToRemove);
-  }
-
-  const urlsToCreate = pullRequests
-    .filter(pr => !existingPRTabs.has(pr.html_url))
-    .map(pr => pr.html_url);
-
-  if (urlsToCreate.length === 0) {
-    return;
-  }
-
-  // If a group already exists, create all tabs and group them.
-  if (group) {
-    const newTabs = await Promise.all(
-      urlsToCreate.map(url => chrome.tabs.create({ url, active: false }))
-    );
-    await chrome.tabs.group({
-      groupId: group.id,
-      tabIds: newTabs.map(tab => tab.id),
-    });
-  } else {
-    // If no group exists, create the first tab to get a tabId for group creation.
-    const [firstUrl, ...remainingUrls] = urlsToCreate;
-    const firstTab = await chrome.tabs.create({ url: firstUrl, active: false });
-
-    const groupId = await chrome.tabs.group({ tabIds: [firstTab.id] });
-    await chrome.tabGroups.update(groupId, { title: TAB_GROUP_NAME, collapsed: true });
-    
-    // Store the new group ID for future use
-    await storeTabGroupId(groupId);
-
-    // Create the rest of the tabs and add them to the new group.
-    if (remainingUrls.length > 0) {
-      const remainingTabs = await Promise.all(
-        remainingUrls.map(url => chrome.tabs.create({ url, active: false }))
-      );
-      await chrome.tabs.group({
-        groupId,
-        tabIds: remainingTabs.map(tab => tab.id),
-      });
-    }
-  }
-}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'updateNow') {
